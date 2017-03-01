@@ -1,2 +1,1 @@
-# buckets
-Color quantization with React.
+# Buckets
