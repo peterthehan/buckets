@@ -6,6 +6,7 @@ import FontIcon from 'material-ui/FontIcon';
 import IconButton from 'material-ui/IconButton';
 import {List, ListItem} from 'material-ui/List';
 import Paper from 'material-ui/Paper';
+import RaisedButton from 'material-ui/RaisedButton';
 import Slider from 'material-ui/Slider';
 import Snackbar from 'material-ui/Snackbar';
 import Subheader from 'material-ui/Subheader';
@@ -17,24 +18,24 @@ new Clipboard('.btn');
 import Palette from '../palette.js';
 
 const style = {
-  parent: {
-    display: 'flex',
-    justifyContent: 'center',
-    marginBottom: '48px',
+  parent:{
+    display:'flex',
+    justifyContent:'center',
+    marginBottom:'48px',
   },
-  column: {
-    display: 'flex',
-    flex: '0 1 700px',
-    flexWrap: 'wrap',
+  column:{
+    display:'flex',
+    flex:'0 1 700px',
+    flexWrap:'wrap',
   },
-  list: {
-    flex: '1 1 200px',
-    margin: '16px',
-    padding: '0px',
+  list:{
+    flex:'1 1 200px',
+    margin:'16px',
+    padding:'0px',
   },
-  card: {
-    flex: '2 1 400px',
-    margin: '16px',
+  card:{
+    flex:'2 1 400px',
+    margin:'16px',
   },
 };
 
@@ -42,116 +43,124 @@ export default class Home extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      buckets: 2,
-      errorText: '',
-      list: null,
-      duplicates: 0,
-      processTime: 0,
-      showSnackbar: false,
-      snackbarDuration: 1000,
-      snackbarText: '',
-      url: 'https://pbs.twimg.com/media/CvteKFjVUAEMNz3.png',
+      buckets:2,
+      duplicates:0,
+      errorText:'',
+      filename:'',
+      list:null,
+      message:'',
+      open:false,
+      snackbarDuration:0,
+      time:0,
+      url:'https://pbs.twimg.com/media/CvteKFjVUAEMNz3.png',
     };
+    this.handleBrowse = this.handleBrowse.bind(this);
     this.handleTextField = this.handleTextField.bind(this);
     this.handleSlider = this.handleSlider.bind(this);
-    this.handleButton = this.handleButton.bind(this);
+    this.handleQuantize = this.handleQuantize.bind(this);
     this.handleCopy = this.handleCopy.bind(this);
     this.handleSnackbar = this.handleSnackbar.bind(this);
   }
 
-  componentWillMount() {
-    this.renderList();
+  componentWillMount() {this.renderList();}
+
+  handleBrowse(event) {
+    this.setState({filename:event.target.files[0].name,});
+    const reader = new FileReader();
+    reader.onloadend = () => this.setState({url:reader.result,});
+    reader.readAsDataURL(event.target.files[0]);
   }
 
   handleTextField(event) {
     if (event.target.value !== '') {
       if (event.target.value.endsWith('.png') || event.target.value.endsWith('.jpg')) {
-        if (this.isURLValid(event.target.value)) {
-          this.setState({errorText: '', url: event.target.value,});
-        } else {
-          this.setState({errorText: 'Invalid url.'});
+        const error = this.isURLValid(event.target.value);
+        if (error === 1) {
+          this.setState({errorText:'', url:event.target.value,});
+        } else if (error === 0) {
+          this.setState({errorText:'Invalid url.'});
+        } else if (error === -1) {
+          this.setState({errorText:`No 'Access-Control-Allow-Origin' header is present on the requested resource.`})
         }
       } else {
-        this.setState({errorText: 'Only JPG and PNG formats are supported.'});
+        this.setState({errorText:'Only JPG and PNG formats are supported.'});
       }
     } else {
-      this.setState({errorText: 'Enter a url.'});
+      this.setState({errorText:'Enter a url.'});
     }
   }
 
   isURLValid(url) {
     const http = new XMLHttpRequest();
     http.open('HEAD', url, false);
-    http.send();
-    return http.status !== 404;
+    try {
+      http.send();
+    } catch(error) {
+      console.error(error);
+      return -1;
+    }
+    return http.status === 404 ? 0 : 1;
   }
 
-  handleTextFieldFocus(event) {
-    event.target.select();
-  }
+  handleTextFieldFocus(event) {event.target.select();}
 
-  handleSlider(event, value) {
-    this.setState({buckets: value});
-  }
+  handleSlider(event, value) {this.setState({buckets:value});}
 
-  handleButton() {
+  handleQuantize() {
     const ti = performance.now();
-    new Promise((resolve, reject) => {
-      this.renderList(resolve)
-    })
-    .then(() => {
-      this.setState({
-        processTime: performance.now() - ti,
-      }, () => {
-        this.setState({
-          showSnackbar: true,
-          snackbarDuration: 5000,
-          snackbarText: `Took ${Math.round(this.state.processTime)} ms. Removed ${this.state.duplicates} ${this.state.duplicates === 0 ? '' : 'duplicate'} bucket${this.state.duplicates === 1 ? '' : 's'}.`,
-        });
-      });
-      // window.scrollTo(0, 0);
-    })
-    .catch((error) => console.error(error));
+    this.renderList()
+      .then(
+        () => {
+          this.setState({time:performance.now() - ti,},
+          () => {
+            this.setState({
+              message:`Took ${Math.round(this.state.time)} ms.${this.state.duplicates === 0 ? '' :` Removed ${this.state.duplicates} duplicate bucket${this.state.duplicates === 1 ? '' :'s' }.`}`,
+              open:true,
+              snackbarDuration:5000,
+            });
+          });
+          //window.scrollTo(0, 0);
+        }
+      )
+      .catch((error) => console.error(error));
   }
 
-  renderList(resolve) {
-    Palette.load(this.state.url)
-    .then((pixels) => Palette.medianCut(pixels, this.state.buckets))
-    .then((buckets) => Palette.sortByLuminance(buckets))
-    .then((buckets) => {
-      buckets = this.removeDuplicates(buckets);
-      let list = [];
-      for (let i = 0; i < buckets.length; ++i) {
-        const rgb = this.toRGB(buckets[i]);
-        list.push(
-          <Paper key={i}>
-            <ListItem
-              key={i}
-              nestedItems={[
-                <div key={i}>
-                  {this.renderListItem(rgb)}
-                  <Divider />
-                  {this.renderListItem(this.convertRGBToHex(buckets[i]))}
-                </div>
-              ]}
-              nestedListStyle={{padding: '0px',}}
-              style={{backgroundColor: rgb, height: '48px',}}
-            />
-          </Paper>
-        );
-      }
-      this.setState({list: <List style={style.list}>{list}</List>});
-      resolve(0);
-    })
-    .catch((error) => console.error(error));
+  renderList() {
+    return Palette.load(this.state.url)
+      .then((pixels) => Palette.medianCut(pixels, this.state.buckets))
+      .then((buckets) => Palette.sortByLuminance(buckets))
+      .then((buckets) => {
+        buckets = this.removeDuplicates(buckets);
+        let list = [];
+        for (let i = 0; i < buckets.length; ++i) {
+          const pixel = buckets[i];
+          const rgb = `rgb(${pixel.r}, ${pixel.g}, ${pixel.b})`;
+          const hex = `#${pixel.r.toString(16)}${pixel.g.toString(16)}${pixel.b.toString(16)}`;
+          list.push(
+            <Paper key={i}>
+              <ListItem
+                nestedItems={[
+                  <div key={i}>
+                    {this.renderListItem(rgb)}
+                    <Divider />
+                    {this.renderListItem(hex)}
+                  </div>
+                ]}
+                nestedListStyle={{padding:'0px',}}
+                style={{backgroundColor:rgb, height:'48px',}}
+              />
+            </Paper>
+          );
+        }
+        this.setState({list:list});
+      })
+      .catch((error) => console.error(error));
   }
 
-  handleCopy() {
-    this.setState({
-      showSnackbar: true,
-      snackbarDuration: 2500,
-      snackbarText: 'Copied!',
-    });
+  removeDuplicates(list) {
+    const unique = [...new Set(list.map((i) => JSON.stringify(i)))];
+    this.setState({duplicates:list.length - unique.length});
+    return unique.map((i) => JSON.parse(i));
   }
 
   renderListItem(str) {
@@ -159,10 +168,7 @@ export default class Home extends Component {
       <ListItem
         primaryText={str}
         rightIconButton={
-          <IconButton
-            className='btn' data-clipboard-text={str}
-            onClick={this.handleCopy}
-          >
+          <IconButton className='btn' data-clipboard-text={str} onTouchTap={this.handleCopy}>
             <FontIcon className='material-icons'>content_copy</FontIcon>
           </IconButton>
         }
@@ -170,35 +176,34 @@ export default class Home extends Component {
     );
   }
 
-  removeDuplicates(list) {
-    const unique = [...new Set(list.map((i) => JSON.stringify(i)))];
-    this.setState({duplicates: list.length - unique.length});
-    return unique.map((i) => JSON.parse(i));
-  }
+  handleCopy() {this.setState({message:'Copied!', open:true, snackbarDuration:2500,});}
 
-  toRGB(pixel) {
-    return `rgb(${pixel.r}, ${pixel.g}, ${pixel.b})`;
-  }
-
-  convertRGBToHex(pixel) {
-    return `#${pixel.r.toString(16)}${pixel.g.toString(16)}${pixel.b.toString(16)}`;
-  }
-
-  handleSnackbar() {
-    this.setState({showSnackbar: !this.state.showSnackbar});
-  }
+  handleSnackbar() {this.setState({open:!this.state.open});}
 
   render() {
     return (
       <div style={style.parent}>
         <div style={style.column}>
-          {this.state.list}
+          <List style={style.list}>{this.state.list}</List>
           <div style={style.card}>
             <Card>
-              <CardMedia>
-                <img role='presentation' src={this.state.url} />
-              </CardMedia>
+              <CardMedia><img role='presentation' src={this.state.url} /></CardMedia>
               <CardText>
+                <div style={{display:'flex',}}>
+                  <div style={{alignItems:'flex-start', display:'flex', marginRight:'8px',}}>
+                    <RaisedButton containerElement='label' label='Browse'>
+                      <input
+                        accept='.jpg,.png'
+                        onChange={this.handleBrowse}
+                        style={{display:'none',}}
+                        type='file'
+                      />
+                    </RaisedButton>
+                  </div>
+                  <div style={{alignItems:'center', display:'flex', flex:'1', wordBreak:'break-all',}}>
+                    {this.state.filename}
+                  </div>
+                </div>
                 <TextField
                   defaultValue={this.state.url}
                   errorText={this.state.errorText}
@@ -207,39 +212,37 @@ export default class Home extends Component {
                   multiLine={true}
                   onChange={this.handleTextField}
                   onFocus={this.handleTextFieldFocus}
-                  style={{width: '100%',}}
+                  style={{width:'100%',}}
                 />
-                <Subheader style={{padding: '0px',}}>buckets</Subheader>
-                <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                <Subheader style={{padding:'0px',}}>buckets</Subheader>
+                <div style={{display:'flex',}}>
                   <Slider
                     defaultValue={this.state.buckets}
                     min={0}
                     max={4}
                     onChange={this.handleSlider}
                     step={1}
-                    style={{flex: '7 1', marginRight: '8px'}}
+                    style={{flex:'8', marginRight:'8px',}}
                     value={this.state.buckets}
                   />
                   <TextField
-                    id="slider"
-                    inputStyle={{color: 'black', textAlign: 'center'}}
                     disabled={true}
-                    style={{flex: '1 1', marginLeft: '8px'}}
+                    id='slider'
+                    inputStyle={{color:'black', textAlign:'center',}}
+                    style={{flex:'1',}}
                     value={Math.pow(2, this.state.buckets)}
                   />
                 </div>
               </CardText>
-              <CardActions>
-                <FlatButton label='QUANTIZE' onTouchTap={this.handleButton} />
-              </CardActions>
+              <CardActions><FlatButton label='QUANTIZE' onTouchTap={this.handleQuantize} /></CardActions>
             </Card>
           </div>
         </div>
         <Snackbar
           autoHideDuration={this.state.snackbarDuration}
-          message={this.state.snackbarText}
+          message={this.state.message}
           onRequestClose={this.handleSnackbar}
-          open={this.state.showSnackbar}
+          open={this.state.open}
         />
       </div>
     );

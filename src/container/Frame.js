@@ -11,6 +11,10 @@ const muiTheme = getMuiTheme({
   appBar: {
     color: blueGrey500,
   },
+  slider: {
+    selectionColor: blueGrey500,
+    rippleColor: blueGrey500,
+  },
   textField: {
     focusColor: blueGrey500,
   },
