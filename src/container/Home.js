@@ -109,19 +109,16 @@ export default class Home extends Component {
   handleQuantize() {
     const ti = performance.now();
     this.renderList()
-      .then(
-        () => {
-          this.setState({time:performance.now() - ti,},
-          () => {
-            this.setState({
-              message:`Took ${Math.round(this.state.time)} ms.${this.state.duplicates === 0 ? '' :` Removed ${this.state.duplicates} duplicate bucket${this.state.duplicates === 1 ? '' :'s' }.`}`,
-              open:true,
-              snackbarDuration:5000,
-            });
+      .then(() => {
+        this.setState({time:performance.now() - ti,}, () => {
+          this.setState({
+            message:`Took ${Math.round(this.state.time)} ms.${this.state.duplicates === 0 ? '' :` Removed ${this.state.duplicates} duplicate bucket${this.state.duplicates === 1 ? '' :'s' }.`}`,
+            open:true,
+            snackbarDuration:5000,
           });
-          //window.scrollTo(0, 0);
-        }
-      )
+        });
+        //window.scrollTo(0, 0);
+      })
       .catch((error) => console.error(error));
   }
 
@@ -147,6 +144,7 @@ export default class Home extends Component {
                   </div>
                 ]}
                 nestedListStyle={{padding:'0px',}}
+                primaryTogglesNestedList={true}
                 style={{backgroundColor:rgb, height:'48px',}}
               />
             </Paper>
