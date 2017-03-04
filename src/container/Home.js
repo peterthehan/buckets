@@ -135,7 +135,7 @@ export default class Home extends Component {
         for (let i = 0; i < buckets.length; ++i) {
           const pixel = buckets[i];
           const rgb = `rgb(${pixel.r}, ${pixel.g}, ${pixel.b})`;
-          const hex = `#${pixel.r.toString(16)}${pixel.g.toString(16)}${pixel.b.toString(16)}`;
+          const hex = this.rgbToHex(pixel);
           list.push(
             <Paper key={i}>
               <ListItem
@@ -161,6 +161,16 @@ export default class Home extends Component {
     const unique = [...new Set(list.map((i) => JSON.stringify(i)))];
     this.setState({duplicates:list.length - unique.length});
     return unique.map((i) => JSON.parse(i));
+  }
+
+  rgbToHex(pixel) {
+    let r = pixel.r.toString(16);
+    let g = pixel.g.toString(16);
+    let b = pixel.b.toString(16);
+    r = r.length === 1 ? '0' + r : r;
+    g = g.length === 1 ? '0' + g : g;
+    b = b.length === 1 ? '0' + b : b;
+    return '#' + r + g + b;
   }
 
   renderListItem(str) {
