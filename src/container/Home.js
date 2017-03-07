@@ -190,14 +190,16 @@ export default class Home extends Component {
             <img role='presentation' src={this.state.url} style={{verticalAlign:'top', width:'100%',}} />
             <div style={{fontSize:'14px', padding:'16px',}}>
               <div style={{display:'flex',}}>
-                <RaisedButton containerElement='label' label='Browse' style={{marginRight:'8px',}}>
-                  <input
-                    accept='.jpg,.png'
-                    onChange={this.handleBrowse}
-                    style={{display:'none',}}
-                    type='file'
-                  />
-                </RaisedButton>
+                <div>
+                  <RaisedButton containerElement='label' label='Browse' style={{marginRight:'8px',}}>
+                    <input
+                      accept='.jpg,.png'
+                      onChange={this.handleBrowse}
+                      style={{display:'none',}}
+                      type='file'
+                    />
+                  </RaisedButton>
+                </div>
                 <div style={{alignItems:'center', display:'flex', wordBreak:'break-all',}}>
                   {this.state.filename}
                 </div>
