@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import {Card, CardActions, CardMedia, CardText} from 'material-ui/Card';
 import Divider from 'material-ui/Divider';
 import FlatButton from 'material-ui/FlatButton';
 import FontIcon from 'material-ui/FontIcon';
@@ -40,38 +39,31 @@ const style = {
 };
 
 export default class Home extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      buckets:2,
-      duplicates:0,
-      errorText:'',
-      filename:'',
-      list:null,
-      message:'',
-      open:false,
-      snackbarDuration:0,
-      time:0,
-      url:'https://pbs.twimg.com/media/CvteKFjVUAEMNz3.png',
-    };
-    this.handleBrowse = this.handleBrowse.bind(this);
-    this.handleTextField = this.handleTextField.bind(this);
-    this.handleSlider = this.handleSlider.bind(this);
-    this.handleQuantize = this.handleQuantize.bind(this);
-    this.handleCopy = this.handleCopy.bind(this);
-    this.handleSnackbar = this.handleSnackbar.bind(this);
+  state = {
+    buckets:2,
+    duplicates:0,
+    errorText:'',
+    filename:'',
+    list:null,
+    message:'',
+    open:false,
+    snackbarDuration:0,
+    time:0,
+    url:'https://pbs.twimg.com/media/CvteKFjVUAEMNz3.png',
+  };
+
+  componentWillMount = () => this.renderList();
+
+  handleBrowse = (event) => {
+    if (event.target.files[0] !== undefined) {
+      const file = event.target.files[0].name;
+      const reader = new FileReader();
+      reader.onloadend = () => this.setState({filename:file, url:reader.result,});
+      reader.readAsDataURL(event.target.files[0]);
+    }
   }
 
-  componentWillMount() {this.renderList();}
-
-  handleBrowse(event) {
-    this.setState({filename:event.target.files[0].name,});
-    const reader = new FileReader();
-    reader.onloadend = () => this.setState({url:reader.result,});
-    reader.readAsDataURL(event.target.files[0]);
-  }
-
-  handleTextField(event) {
+  handleTextField = (event) => {
     if (event.target.value !== '') {
       if (event.target.value.endsWith('.png') || event.target.value.endsWith('.jpg')) {
         const error = this.isURLValid(event.target.value);
@@ -90,7 +82,7 @@ export default class Home extends Component {
     }
   }
 
-  isURLValid(url) {
+  isURLValid = (url) => {
     const http = new XMLHttpRequest();
     http.open('HEAD', url, false);
     try {
@@ -102,66 +94,67 @@ export default class Home extends Component {
     return http.status === 404 ? 0 : 1;
   }
 
-  handleTextFieldFocus(event) {event.target.select();}
+  handleTextFieldFocus = (event) => event.target.select();
 
-  handleSlider(event, value) {this.setState({buckets:value});}
+  handleSlider = (event, value) => this.setState({buckets:value});
 
-  handleQuantize() {
+  handleQuantize = () => {
     const ti = performance.now();
     this.renderList()
       .then(() => {
-        this.setState({time:performance.now() - ti,}, () => {
-          this.setState({
-            message:`Took ${Math.round(this.state.time)} ms.${this.state.duplicates === 0 ? '' :` Removed ${this.state.duplicates} duplicate bucket${this.state.duplicates === 1 ? '' :'s' }.`}`,
-            open:true,
-            snackbarDuration:5000,
-          });
+        const time = performance.now() - ti;
+        this.setState({
+          message:`Took ${Math.round(time)} ms.${this.state.duplicates === 0 ? '' :` Removed ${this.state.duplicates} duplicate bucket${this.state.duplicates === 1 ? '' :'s' }.`}`,
+          open:true,
+          snackbarDuration:5000,
+          time:time,
         });
         //window.scrollTo(0, 0);
       })
       .catch((error) => console.error(error));
   }
 
-  renderList() {
+  renderList = () => {
     return Palette.load(this.state.url)
       .then((pixels) => Palette.medianCut(pixels, this.state.buckets))
       .then((buckets) => Palette.sortByLuminance(buckets))
       .then((buckets) => {
-        buckets = this.removeDuplicates(buckets);
+        const uniqueBuckets = this.removeDuplicates(buckets);
         let list = [];
-        for (let i = 0; i < buckets.length; ++i) {
-          const pixel = buckets[i];
+        for (let i = 0; i < uniqueBuckets.length; ++i) {
+          const pixel = uniqueBuckets[i];
           const rgb = `rgb(${pixel.r}, ${pixel.g}, ${pixel.b})`;
           const hex = this.rgbToHex(pixel);
           list.push(
-            <Paper key={i}>
-              <ListItem
-                nestedItems={[
-                  <div key={i}>
-                    {this.renderListItem(rgb)}
-                    <Divider />
-                    {this.renderListItem(hex)}
-                  </div>
-                ]}
-                nestedListStyle={{padding:'0px',}}
-                primaryTogglesNestedList={true}
-                style={{backgroundColor:rgb, height:'48px',}}
-              />
-            </Paper>
+            <ListItem
+              key={i}
+              nestedItems={[
+                <div key={i}>
+                  {this.renderListItem(rgb)}
+                  <Divider />
+                  {this.renderListItem(hex)}
+                </div>
+              ]}
+              nestedListStyle={{padding:'0px',}}
+              primaryTogglesNestedList={true}
+              style={{backgroundColor:rgb, height:'48px',}}
+            />
           );
         }
-        this.setState({list:list});
+        this.setState({
+          duplicates:buckets.length - uniqueBuckets.length,
+          list:<Paper>{list}</Paper>,
+        });
       })
       .catch((error) => console.error(error));
   }
 
-  removeDuplicates(list) {
+  removeDuplicates = (list) => {
     const unique = [...new Set(list.map((i) => JSON.stringify(i)))];
-    this.setState({duplicates:list.length - unique.length});
     return unique.map((i) => JSON.parse(i));
   }
 
-  rgbToHex(pixel) {
+  rgbToHex = (pixel) => {
     let r = pixel.r.toString(16);
     let g = pixel.g.toString(16);
     let b = pixel.b.toString(16);
@@ -171,7 +164,7 @@ export default class Home extends Component {
     return '#' + r + g + b;
   }
 
-  renderListItem(str) {
+  renderListItem = (str) => {
     return (
       <ListItem
         primaryText={str}
@@ -184,74 +177,72 @@ export default class Home extends Component {
     );
   }
 
-  handleCopy() {this.setState({message:'Copied!', open:true, snackbarDuration:2500,});}
+  handleCopy = () => this.setState({message:'Copied!', open:true, snackbarDuration:2500,});
 
-  handleSnackbar() {this.setState({open:!this.state.open});}
+  handleSnackbar = () => this.setState({open:!this.state.open});
 
   render() {
     return (
       <div style={style.parent}>
         <div style={style.column}>
           <List style={style.list}>{this.state.list}</List>
-          <div style={style.card}>
-            <Card>
-              <CardMedia><img role='presentation' src={this.state.url} /></CardMedia>
-              <CardText>
-                <div style={{display:'flex',}}>
-                  <div style={{alignItems:'flex-start', display:'flex', marginRight:'8px',}}>
-                    <RaisedButton containerElement='label' label='Browse'>
-                      <input
-                        accept='.jpg,.png'
-                        onChange={this.handleBrowse}
-                        style={{display:'none',}}
-                        type='file'
-                      />
-                    </RaisedButton>
-                  </div>
-                  <div style={{alignItems:'center', display:'flex', flex:'1', wordBreak:'break-all',}}>
-                    {this.state.filename}
-                  </div>
+          <Paper style={style.card}>
+            <img role='presentation' src={this.state.url} style={{verticalAlign:'top', width:'100%',}} />
+            <div style={{fontSize:'14px', padding:'16px',}}>
+              <div style={{display:'flex',}}>
+                <RaisedButton containerElement='label' label='Browse' style={{marginRight:'8px',}}>
+                  <input
+                    accept='.jpg,.png'
+                    onChange={this.handleBrowse}
+                    style={{display:'none',}}
+                    type='file'
+                  />
+                </RaisedButton>
+                <div style={{alignItems:'center', display:'flex', wordBreak:'break-all',}}>
+                  {this.state.filename}
                 </div>
-                <TextField
-                  defaultValue={this.state.url}
-                  errorText={this.state.errorText}
-                  floatingLabelText='url'
-                  id='url'
-                  multiLine={true}
-                  onChange={this.handleTextField}
-                  onFocus={this.handleTextFieldFocus}
-                  style={{width:'100%',}}
+              </div>
+              <TextField
+                defaultValue={this.state.url}
+                errorText={this.state.errorText}
+                floatingLabelText='url'
+                id='url'
+                multiLine={true}
+                onChange={this.handleTextField}
+                onFocus={this.handleTextFieldFocus}
+                style={{width:'100%',}}
+              />
+              <Subheader style={{fontSize:'16px', padding:'0px', transform:'scale(0.75)', transformOrigin:'left bottom 0px',}}>buckets</Subheader>
+              <div style={{display:'flex',}}>
+                <Slider
+                  defaultValue={this.state.buckets}
+                  min={0}
+                  max={4}
+                  onChange={this.handleSlider}
+                  step={1}
+                  style={{flex:'8', marginRight:'8px',}}
+                  value={this.state.buckets}
                 />
-                <Subheader style={{padding:'0px',}}>buckets</Subheader>
-                <div style={{display:'flex',}}>
-                  <Slider
-                    defaultValue={this.state.buckets}
-                    min={0}
-                    max={4}
-                    onChange={this.handleSlider}
-                    step={1}
-                    style={{flex:'8', marginRight:'8px',}}
-                    value={this.state.buckets}
-                  />
-                  <TextField
-                    disabled={true}
-                    id='slider'
-                    inputStyle={{color:'black', textAlign:'center',}}
-                    style={{flex:'1',}}
-                    value={Math.pow(2, this.state.buckets)}
-                  />
-                </div>
-              </CardText>
-              <CardActions><FlatButton label='QUANTIZE' onTouchTap={this.handleQuantize} /></CardActions>
-            </Card>
-          </div>
+                <TextField
+                  disabled={true}
+                  id='slider'
+                  inputStyle={{color:'black', textAlign:'center',}}
+                  style={{flex:'1',}}
+                  value={Math.pow(2, this.state.buckets)}
+                />
+              </div>
+            </div>
+            <div style={{padding:'8px',}}>
+              <FlatButton label='QUANTIZE' onTouchTap={this.handleQuantize} />
+            </div>
+          </Paper>
+          <Snackbar
+            autoHideDuration={this.state.snackbarDuration}
+            message={this.state.message}
+            onRequestClose={this.handleSnackbar}
+            open={this.state.open}
+          />
         </div>
-        <Snackbar
-          autoHideDuration={this.state.snackbarDuration}
-          message={this.state.message}
-          onRequestClose={this.handleSnackbar}
-          open={this.state.open}
-        />
       </div>
     );
   }
