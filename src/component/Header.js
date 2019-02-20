@@ -41,7 +41,7 @@ export default class Header extends Component {
           <List>
             <Subheader>GitHub</Subheader>
             <ListItem
-              href="https://github.com/Johj/buckets"
+              href="https://github.com/peterthehan/buckets"
               primaryText="Buckets"
               secondaryText="by Peter Han"
               target="_blank"
@@ -49,7 +49,7 @@ export default class Header extends Component {
             <Divider />
             <Subheader>Dependencies</Subheader>
             <ListItem
-              href="https://github.com/Johj/palette"
+              href="https://github.com/peterthehan/palette"
               primaryText="palette"
               secondaryText="1.0.0"
               target="_blank"

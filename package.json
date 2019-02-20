@@ -11,15 +11,15 @@
     "material",
     "design"
   ],
-  "homepage": "https://johj.github.io/buckets/",
+  "homepage": "https://peterthehan.github.io/buckets/",
   "bugs": {
-    "url": "https://github.com/Johj/buckets/issues"
+    "url": "https://github.com/peterthehan/buckets/issues"
   },
   "license": "MIT",
   "author": "Peter Han",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Johj/buckets.git"
+    "url": "https://github.com/peterthehan/buckets.git"
   },
   "scripts": {
     "start": "react-scripts start",
