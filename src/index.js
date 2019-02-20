@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {IndexRoute, Route, Router, browserHistory} from 'react-router';
+import { IndexRoute, Route, Router, browserHistory } from 'react-router';
 
 import Frame from './container/Frame';
 import Home from './container/Home';

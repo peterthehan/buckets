@@ -50,7 +50,7 @@ module.exports = class Palette {
     let rmax = Number.NEGATIVE_INFINITY;
     let gmax = Number.NEGATIVE_INFINITY;
     let bmax = Number.NEGATIVE_INFINITY;
-    rgbArr.forEach((pixel) => {
+    rgbArr.forEach(pixel => {
       rmin = Math.min(rmin, pixel.r);
       gmin = Math.min(gmin, pixel.g);
       bmin = Math.min(bmin, pixel.b);
@@ -77,25 +77,32 @@ module.exports = class Palette {
   }
 
   static _averageBucket(rgbArr) {
-    const color = rgbArr.reduce((prev, curr) => {
-      prev.r += curr.r;
-      prev.g += curr.g;
-      prev.b += curr.b;
-      return prev;
-    }, {r: 0, g: 0, b: 0});
-    return [{
-      r: Math.round(color.r / rgbArr.length),
-      g: Math.round(color.g / rgbArr.length),
-      b: Math.round(color.b / rgbArr.length)
-    }];
+    const color = rgbArr.reduce(
+      (prev, curr) => {
+        prev.r += curr.r;
+        prev.g += curr.g;
+        prev.b += curr.b;
+        return prev;
+      },
+      { r: 0, g: 0, b: 0 }
+    );
+    return [
+      {
+        r: Math.round(color.r / rgbArr.length),
+        g: Math.round(color.g / rgbArr.length),
+        b: Math.round(color.b / rgbArr.length)
+      }
+    ];
   }
 
   static sortByLuminance(rgbArr) {
-    return rgbArr.sort((a, b) => Palette._relativeLuminance(a) - Palette._relativeLuminance(b));
+    return rgbArr.sort(
+      (a, b) => Palette._relativeLuminance(a) - Palette._relativeLuminance(b)
+    );
   }
 
   static _relativeLuminance(pixel) {
     // https://en.wikipedia.org/wiki/Relative_luminance
     return 0.2126 * pixel.r + 0.7152 * pixel.g + 0.0722 * pixel.b;
   }
-}
+};
