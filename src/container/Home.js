@@ -49,7 +49,7 @@ export default class Home extends Component {
     open: false,
     snackbarDuration: 0,
     time: 0,
-    url: 'https://pbs.twimg.com/media/CvteKFjVUAEMNz3.png'
+    url: 'https://raw.githubusercontent.com/Johj/holo/master/assets/holo.png'
   };
 
   componentWillMount = () => this.renderList();
